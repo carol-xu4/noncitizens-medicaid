@@ -13,7 +13,7 @@ cps = cps %>% rename_with(tolower)
 
 cps = cps %>%
   select(
-    year, serial, asecwth, pernum, asecwt, citizen, bpl, himcaidnw, gq)
+    year, serial, asecwth, pernum, asecwt, citizen, bpl, himcaidnw, caidnw, gq)
 
 #  remove GQ
 cps = cps %>%

@@ -52,7 +52,7 @@ write_csv(noncitizens, "results/cps_noncitizens.csv")
 # total noncitizens on medicaid
 noncitizens_medicaid = cps %>%
   filter(!is.na(citizen2), citizen2 == 1) %>%
-  group_by(year, himcaidnw) %>%
+  group_by(year, caidnw) %>%
   summarize(n = n(),
     population = sum(asecwt), .groups = "drop") %>%
   print(n = Inf)
@@ -65,7 +65,7 @@ household_flags = cps %>%
   summarize(
     asecwth        = first(asecwth),
     any_noncitizen = any(citizen2 == 1, na.rm = TRUE),
-    any_medicaid   = any(himcaidnw == 2, na.rm = TRUE),
+    any_medicaid   = any(caidnw == 2, na.rm = TRUE),
     .groups = "drop")
 
 noncitizen_medicaid_households = household_flags %>%
@@ -86,7 +86,7 @@ household_flags = household_flags %>%
     cps %>%
       group_by(year, serial) %>%
       summarize(
-        any_noncitizen_medicaid = any(citizen2 == 1 & himcaidnw == 2, na.rm = TRUE),
+        any_noncitizen_medicaid = any(citizen2 == 1 & caidnw == 2, na.rm = TRUE),
         .groups = "drop"),
     by = c("year", "serial")
   )
@@ -102,3 +102,43 @@ noncitizen_on_medicaid_households = household_flags %>%
 print(noncitizen_on_medicaid_households)
 
 write_csv(noncitizen_on_medicaid_households, "results/cps_noncitizen_on_medicaid_households.csv")
+
+# total people on medicaid
+cps %>% group_by(year, caidnw) %>%
+    summarize(n = n(),
+    population = sum(asecwt), .groups = "drop") %>%
+    print(n = Inf)
+
+# people on medicaid who are in a household with >=1 noncitizen
+medicaid_people_in_noncitizen_hh = cps %>%
+  left_join(
+    household_flags %>% select(year, serial, any_noncitizen),
+    by = c("year", "serial")
+  ) %>%
+  filter(caidnw == 2, any_noncitizen) %>%
+  group_by(year) %>%
+  summarize(
+    n = n(),
+    population = sum(asecwt),
+    .groups = "drop")
+
+print(medicaid_people_in_noncitizen_hh)
+
+write_csv(medicaid_people_in_noncitizen_hh, "results/cps_medicaid_people_in_noncitizen_hh.csv")
+
+# smell check: people on medicaid who are in households where everyone is a citizen
+medicaid_people_in_citizen_hh = cps %>%
+  left_join(
+    household_flags %>% select(year, serial, any_noncitizen),
+    by = c("year", "serial")
+  ) %>%
+  filter(caidnw == 2, !any_noncitizen) %>%
+  group_by(year) %>%
+  summarize(
+    n = n(),
+    population = sum(asecwt),
+    .groups = "drop")
+
+print(medicaid_people_in_citizen_hh)
+
+write_csv(medicaid_people_in_citizen_hh, "results/cps_medicaid_people_in_citizen_hh.csv")
